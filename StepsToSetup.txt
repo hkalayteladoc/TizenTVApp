@@ -1,0 +1,6 @@
+
+
+https://docs.tizen.org/application/web/get-started/tv/first-samsung-tv-app/
+
+https://developer.tizen.org/ko/forums/web-application-development/i-dont-get-response-specific-url-using-xmlhttprequest?langredirect=1
+
