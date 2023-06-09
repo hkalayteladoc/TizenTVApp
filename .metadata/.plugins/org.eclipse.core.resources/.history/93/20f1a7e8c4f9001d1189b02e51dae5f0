@@ -1,0 +1,334 @@
+var checkTime;
+
+//Initialize function
+var init = function ()
+{
+    // TODO:: Do your initialization job
+    console.log('init() called');
+    
+    document.addEventListener('visibilitychange', function() 
+    {
+        if(document.hidden)
+        {
+            // Something you want to do when hide or exit.
+        } else 
+        {
+            // Something you want to do when resume.
+        }
+    });
+ 
+    // add eventListener for keydown
+    document.addEventListener('keydown', function(e) 
+    {
+    	switch(e.keyCode){
+    	case 37: //LEFT arrow
+    		focusPreviousTabIndex();
+    		break;
+    	case 38: //UP arrow
+    		focusPreviousTabIndex();
+    		break;
+    	case 39: //RIGHT arrow
+    		focusNextTabIndex();
+    		break;
+    	case 40: //DOWN arrow
+    		focusNextTabIndex();
+    		break;
+    	case 13: //OK button
+    		break;
+    	case 10009: //RETURN button
+		tizen.application.getCurrentApplication().exit();
+    		break;
+    	default:
+    		console.log('Key code : ' + e.keyCode);
+    		break;
+    	}
+    });
+    
+    //startTime();
+};
+// window.onload can work without <body onload="">
+window.onload = init;
+
+
+var currElem=1;
+var upcounter = 0;
+var downcounter = 0;
+function focusNextTabIndex()
+{
+	var msg = "";
+	var elems = document.querySelector('[tabindex]');
+	for(var i = 0; i < elems.length; i++)
+	{
+		msg += elems[i].tagname + " = " + elems[i].tabindex + "<BR>";
+	}
+	
+	var msg2 = document.getElementById('text2').innerHTML;
+	if(msg2.length > 0)
+		upcounter++;
+	document.getElementById('text2').innerHTML = upcounter + " - " + msg;
+}
+
+function focusPreviousTabIndex()
+{
+	var msg = "";
+	var elems = document.querySelector('[tabindex]');
+	for(var i = 0; i < elems.length; i++)
+	{
+		msg += elems[i].tagname + " = " + elems[i].tabindex + "<BR>";
+	}
+	
+	var msg2 = document.getElementById('text2').innerHTML;
+	if(msg2.length > 0)
+		downcounter++;
+	document.getElementById('text3').innerHTML = downcounter + " - " + msg;
+	
+}
+
+var counter = 0;
+function meFocused()
+{
+	var str = this.innerHTML;
+	this.innerHTML = counter + " - " + str;
+	counter++;
+}
+
+//use tab stop
+
+var neededVidSource;
+
+function onSuccessCallback(videoSource)
+{
+	var msg = "None";
+	var attachedDevices = "";
+	for(var i = 0; i < videoSource.connected.length; i++)
+	{
+		attachedDevices += "Type : " + videoSource.connected[i].type + "<br>";
+		attachedDevices += "Number : " + videoSource.connected[i].number + "<br>";
+		attachedDevices += "signal : " + videoSource.connected[i].signal + "<br>";
+		//attachedDevices += "editName : " + videoSource.connected[i].editName + "<br>";
+		attachedDevices += "<br>";
+		
+		if((videoSource.connected[i].type === "HDMI") && videoSource.connected[i].number === 2)
+		{
+			neededVidSource = videoSource.connected[i];
+			//tizen.tvwindow.setSource(videoSource.connected[i], successCB, errorCB);
+			//tizen.application.getCurrentApplication().exit();
+			//tizen.application.getCurrentApplication().hide();
+			//return;
+		}
+
+		
+	}
+	
+	if(attachedDevices.length > 0)
+	{
+		msg = "<br>Connected<br>" + attachedDevices + "<br>";
+	}
+	
+	attachedDevices = "";
+
+	for(var i = 0; i < videoSource.disconnected.length; i++)
+	{
+		attachedDevices += "Type : " + videoSource.disconnected[i].type + "<br>";
+		attachedDevices += "Number : " + videoSource.disconnected[i].number + "<br>";
+		attachedDevices += "signal : " + videoSource.disconnected[i].signal + "<br>";
+		//attachedDevices += "editName : " + videoSource.disconnected[i].editName + "<br>";
+		attachedDevices += "<br>";
+	}
+	
+	if(attachedDevices.length > 0)
+	{
+		msg += "<br>Disconnected<br>" + attachedDevices + "<br>";
+	}
+	
+  //console.log("The video source : " + videoSource.connected);
+  document.getElementById('textPara').innerHTML = msg + "<br>.<br>";
+}
+
+function onArraySuccessCallback(videoSourceArray)
+{
+  console.log("The video source : " + videoSourceArray.connected);
+  document.getElementById('text3').innerHTML = videoSourceArray.length;
+}
+
+
+function onErrorCallback(error)
+{
+  console.log("An error occurred " + error.message);
+  document.getElementById('text3').innerHTML = error.message;
+}
+
+
+function successCB(source, type)
+{
+	var msg = "setSource() is successfully done, source type: " + source.type +
+    ", source port number: " + source.number + ", signal provided: " + source.signal;
+  console.log(msg);
+  document.getElementById('text2').innerHTML = msg;
+}
+
+function errorCB(error)
+{
+	var msg = "setSource() is failed, error name: " + error.name + ", error message: " + error.message; 
+  console.log(msg);
+  document.getElementById('text2').innerHTML = msg;
+}
+
+function SwitchTeladoc()
+{
+	var videoSource = neededVidSource;
+	//tizen.SystemInfoVideoSourceInfo videoSource;
+	//videoSource.type = "HDMI";
+	//videoSource.number = 2;
+	
+	if(videoSource === null)
+	{
+		  document.getElementById('switch').innerHTML = "is null";
+		  return;
+	}
+	
+	tizen.tvwindow.setSource(videoSource, successCB, errorCB);
+	tizen.application.getCurrentApplication().exit();
+}
+
+
+function startTime()
+{
+    var today = new Date();
+    var h = today.getHours();
+    var m = today.getMinutes();
+    var s = today.getSeconds();
+    m = checkTime(m);
+    s = checkTime(s);
+    
+    var msg = "this";
+    
+    try
+    {
+    	var source = tizen.tvwindow.getSource();
+    	var vidSourceInfo = "<br><br><br> current <br>";
+    	vidSourceInfo += "Type : " + source.type + "<br>";
+    	vidSourceInfo += "Number : " + source.number + "<br>";
+    	vidSourceInfo += "signal : " + source.signal + "<br>";
+    	vidSourceInfo += "<br><br><br><br>";
+    	msg = vidSourceInfo;
+    }
+    catch (error)
+    {
+        msg = "<br><br>" + "Error name: " + error.name + ", error message: " + error.message + "<br><br>";
+
+        console.log(msg);
+    }
+
+    document.getElementById('text2').innerHTML = msg;
+
+    
+    
+	var videoSource = tizen.tvwindow.getSource();
+	//tizen.SystemInfoVideoSourceInfo videoSource;
+	videoSource.type = "HDMI";
+	videoSource.number = 2;
+	
+	var videoSourceNew = videoSource;
+	videoSourceNew.type = "HDMI";
+	videoSourceNew.number = 2;
+	
+	//tizen.tvwindow.setSource(videoSourceNew, successCB, errorCB);
+
+    
+    
+    
+    msg = "";
+    
+    try
+    {
+     // var bluetooth = tizen.systeminfo.getCapability("http://tizen.org/feature/network.bluetooth");
+      //var sysinfo = tizen.systeminfo.getCapability("http://tizen.org/feature/SystemInfoDisplay");
+      //var sysinfo = tizen.SystemInfoDisplay.brightness;
+      //msg = "Bluetooth = " + bluetooth + "<BR>"; 
+      //msg += "sysinfo = " + sysinfo + "<BR>"; 
+      /* Checks if a device supports Bluetooth API. */
+      //var manufacturer = tizen.systeminfo.getCapability("http://tizen.org/system/manufacturer");
+      //msg = "Manufacturer = " + manufacturer + "\n";
+
+      //var buildRelease = tizen.systeminfo.getCapability("http://tizen.org/system/build.release");
+      //msg += "BuildRelease = " + buildRelease + "\n";
+      
+    	
+      //tizen.systeminfo.getPropertyValueArray("VIDEOSOURCE", onArraySuccessCallback, onErrorCallback);    	
+        //msg += "tizen = " + tizen + "<BR>";
+        //msg += "tizen.systeminfo = " + tizen.systeminfo + "<BR>";
+    	
+        msg += "<BR>";
+    	
+    	var i;
+    	//var keyCode = {}; 
+    	var supportedKeys;
+    	supportedKeys = tizen.tvinputdevice.getSupportedKeys();
+    	for (i = 0; i < supportedKeys.length; i++)
+    	{
+    	    //keyCode[supportedKeys[i].name] = supportedKeys[i].code;
+            msg += supportedKeys[i].name + " = " + supportedKeys[i].code + "<BR>";
+    		
+    	}    	
+    	
+    	// "Exit"   key
+    	
+    	
+        msg += "<BR>";
+        msg += "<BR>";
+    	
+    	
+    	
+      msg += "here0 ";
+    	msg += tizen.systeminfo.getPropertyValue("VIDEOSOURCE", onSuccessCallback) + "<BR>";
+       msg += "here1 ";
+    	
+      msg += "Total Memory = " + tizen.systeminfo.getTotalMemory() + "<BR>"; 
+      msg += "Available Memory = " + tizen.systeminfo.getAvailableMemory() + "<BR>";
+
+      //msg += "video Source = " + tizen.systeminfo.getPropertyValue() + "<BR>";
+
+      var coreAPIver = tizen.systeminfo.getCapability("http://tizen.org/feature/platform.core.api.version");
+      msg += "coreAPIver = " + coreAPIver + "<BR>";
+
+      var nativeAPIver = tizen.systeminfo.getCapability("http://tizen.org/feature/platform.native.api.version");
+      msg += "coreAPIver = " + coreAPIver + "<BR>";
+      
+      var platformver = tizen.systeminfo.getCapability("http://tizen.org/feature/platform.version");
+      msg += "platformver = " + platformver + "<BR>";
+      
+      var platformWebAPIver = tizen.systeminfo.getCapability("http://tizen.org/feature/platform.web.api.version");
+      msg += "platformWebAPIver = " + platformWebAPIver + "<BR>";
+      
+      var platformVerName = tizen.systeminfo.getCapability("http://tizen.org/feature/platform.version.name");
+      msg += "platformVerName = " + platformVerName + "<BR>";
+      
+      var profileName = tizen.systeminfo.getCapability("http://tizen.org/feature/profile");
+      msg += "profileName = " + profileName + "<BR>";
+
+      //msg += "model = " + tizen.device.model() + "<BR>"; 
+      //msg += "model = " + model + "<BR>";
+      
+
+      
+    }
+    catch (error)
+    {
+    	var errMsg = "Error code: " + error.code +  "Error name: " + error.name + ", message: " + error.message; 
+    	msg = errMsg;
+      console.log(errMsg);
+    }    
+    
+    document.getElementById('text3').innerHTML = msg;
+    //document.getElementById('text3').innerHTML='Current time: ' + h + ':' + m + ':' + s;
+    //setTimeout(startTime, 10);
+}
+
+function checkTime(i)
+{
+    if (i < 10) {
+        i='0' + i;
+    }
+    return i;
+}

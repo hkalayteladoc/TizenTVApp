@@ -1,0 +1,388 @@
+/**
+ * Teladoc Helath Inc. Copyright (c) 2023. All rights reserved.
+ */
+
+
+//var checkTime;
+
+//Initialize function
+var init = function () 
+{
+    // TODO:: Do your initialization job
+    console.log('init() called');
+    
+    document.addEventListener('visibilitychange', function()
+    {
+        if(document.hidden)
+        {
+            // Something you want to do when hide or exit.
+        }
+        else
+        {
+            // Something you want to do when resume.
+        }
+    });
+ 
+    // add eventListener for keydown
+    document.addEventListener('keydown', function(e)
+    {
+    	switch(e.keyCode)
+    	{
+    	case 37: //LEFT arrow
+    		focusPreviousTabIndex();
+    		break;
+    	case 38: //UP arrow
+    		e.preventDefault();
+    		focusUp();
+    		break;
+    	case 39: //RIGHT arrow
+    		focusNextTabIndex();
+    		break;
+    	case 40: //DOWN arrow
+    		e.preventDefault();
+    		focusDown();
+    		break;
+    	case 13: //OK button
+    	case 32: //OK button
+    		ButtonClick();
+    		break;
+    	case 10009: //RETURN button
+		tizen.application.getCurrentApplication().exit();
+    		break;
+    	default:
+    		console.log('Key code : ' + e.keyCode);
+    		break;
+    	}
+    });
+
+	//tizen.systeminfo.getPropertyValue("VIDEOSOURCE", ReadPortsAndFillSelector);
+    allTabIndexElems = document.querySelectorAll('[tabindex]');
+    tabIndexCount = allTabIndexElems.length;
+
+    //focusNextTabIndex();	// make sure there is a focus
+
+	ReadDeviceInfo();
+	setTimeout(function() {FillSelector(); DisplayDeviceInfo(); }, 100);
+	
+	setTimeout(StartPostPoll, 5000);
+	
+  
+};
+// window.onload can work without <body onload="">
+window.onload = init;
+
+var serverAddress = "a11611it.ith.local";
+var serverAddress = "10.231.64.3"; // ip for "a11611it.ith.local";
+
+//var serverAddress = "a11562it.teladoc.net";
+var serverPort = "8000";
+
+
+var portMap = new Map();
+
+var systemInfoData = 
+	{
+		"ports" : []
+	};	 // json object
+let systemInfo = {
+	    totalMemoryBytes : 0,
+	    totalMemoryGiBytes: 0,
+	    
+	    availableMemoryBytes: 0,
+	    availableMemoryGiBytes: 0,
+	    
+		//tvModel: "",
+		//tvManufacturer: "",
+		//tvBuildVersion: "",
+
+		currentVideoSource: null, 
+		videoSources: null,
+		
+		errorMessages: [],
+};
+
+
+function DisplayDeviceInfo()    
+{
+	var tableObject = document.getElementById("infoTable");
+
+	InsertRowColumn(tableObject, 
+			"Total Memory", systemInfo.totalMemoryGiBytes.toFixed(2) + "GB (" + systemInfo.totalMemoryBytes + ")", 
+			"Core Api Ver", systemInfo.coreAPIver);
+	
+	
+	InsertRowColumn(tableObject, 
+			"Available Memory", systemInfo.availableMemoryGiBytes.toFixed(2) + "GB (" + systemInfo.availableMemoryBytes + ")", 
+			"Native Api Ver", systemInfo.nativeAPIver);
+	
+	InsertRowColumn(tableObject, 
+			"Profile Name", systemInfo.profileName, 
+			"Platform Web API Version", systemInfo.platformWebAPIver);
+	
+	
+	InsertRowColumn(tableObject, 
+			"Platform Version Name", systemInfo.platformVerName , 
+			"Platform Version", systemInfo.platformver);
+	
+	console.log("systemInfoData  = " + JSON.stringify(systemInfoData));
+	console.log("systemInfo.TVmodel 2 = " + systemInfoData.tvModel);
+	
+	InsertRowColumn(tableObject, 
+			"TV Model", systemInfoData.tvModel,  
+			"Manufacturer", systemInfoData.tvManufacturer);
+	
+	InsertRowColumn(tableObject, 
+			"Build Version", systemInfoData.tvBuildVersion,  
+			" ", " ");
+	
+}
+
+
+function  InsertRowColumn(tableObject, label1, value1, label2, value2)
+{
+    var rowCount = tableObject.rows.length;  
+    var row = tableObject.insertRow(rowCount-2);  
+
+    var cell1 = row.insertCell(0);  
+    var cell2 = row.insertCell(1);  
+    var cell3 = row.insertCell(2);  
+    var cell4 = row.insertCell(3);  
+    var cell5 = row.insertCell(4);  
+
+    cell1.innerHTML = label1;
+    cell2.innerHTML = value1;
+    cell3 = "&nbsp;&nbsp;";
+    cell4.innerHTML = label2;
+    cell5.innerHTML = value2;
+	
+}
+
+
+function FillSelector()
+{
+	var portSelectorElem = document.getElementById('portSelection');
+	//var currentVideoSource = tizen.tvwindow.getSource();
+	var currentPortName = systemInfo.currentVideoSource.type + systemInfo.currentVideoSource.number;
+	
+	videoSources = systemInfo.videoSources;
+	for(var i = 0; i < videoSources.connected.length; i++)
+	{
+		var portName = videoSources.connected[i].type + videoSources.connected[i].number; 
+		
+		var isSelected = false;
+		if(currentPortName === portName)
+		{
+			isSelected = true;
+		}
+		
+	    let input = document.createElement("input");
+	    input.type = "radio";
+	    input.id = portName;
+	    input.name = "portSelector";
+	    input.checked = isSelected;
+	    tabIndexCount++;
+	    input.setAttribute("tabindex", tabIndexCount.toString());
+	    //console.log(input);
+
+	    let label = document.createElement("label");
+	    label.innerText = portName;
+	    label.setAttribute("class", "radioLabel");
+	    label.setAttribute("for", portName);
+	    
+	    //input.appendChild(label);
+	    
+	    portSelectorElem.appendChild(input);		
+	    portSelectorElem.appendChild(label);		
+	}
+	
+	
+    allTabIndexElems = document.querySelectorAll('[tabindex]');
+    tabIndexCount = allTabIndexElems.length; 
+	//console.log("allTabIndexElems-1: " + allTabIndexElems.length);
+    
+    focusNextTabIndex();	// make sure there is a focus
+	
+}
+
+
+
+
+var allTabIndexElems;
+var theFocusedElem = null;
+var counter = 0;
+var tabIndexCount=0;
+
+function focusTheTabIndex( index )
+{
+	//console.log("focusTheTabIndex : " + index);
+	
+	//console.log("allTabIndexElems-2: " + allTabIndexElems.length);
+	var elems = allTabIndexElems; //document.querySelectorAll('[tabindex]');
+	for(var i = 0; i < elems.length; i++)
+	{
+		if(index === Number(elems[i].getAttribute("tabindex")))
+		{
+			theFocusedElem = elems[i];
+			break;
+		}
+	}
+	
+	if(theFocusedElem === null)
+	{
+		alert("Oddly element not found with tabindex: " + index);
+		return;
+	}
+
+	theFocusedElem.focus();
+	if(theFocusedElem.type === "radio")
+	{
+		theFocusedElem.checked = true;
+	}
+}
+
+
+function focusNextTabIndex()
+{
+	//console.log("focusNextTabIndex - all:" + allTabIndexElems.length);
+	counter++; 
+	if(counter > allTabIndexElems.length) 
+	{
+		counter = 1;
+	}
+	focusTheTabIndex(counter);
+}
+
+
+function focusPreviousTabIndex()
+{
+	//console.log("focusPreviousTabIndex");
+	counter--; 
+	if(counter <= 0) 
+	{
+		counter = allTabIndexElems.length;
+	}
+	focusTheTabIndex(counter);
+}
+
+
+function ButtonClick()
+{
+	console.log("ButtonClick");
+	if(theFocusedElem === null)
+	{
+		console.log("null???");
+		return;
+	}
+
+	console.log(theFocusedElem.type);
+	
+	if(theFocusedElem.type === "button")
+	{
+		theFocusedElem.click();
+	}
+	return;
+}
+
+
+function GetSelectedPort()
+{
+	var elems = document.getElementsByName('portSelector');
+	for(var i = 0; i < elems.length; i++)
+	{
+		if(elems[i].checked)
+		{
+			return elems[i];
+		}
+	}
+}
+
+function focusUp()
+{
+	console.log("up");
+	
+	if(theFocusedElem.id === "changePortButton")
+	{
+		theFocusedElem = GetSelectedPort();
+	}
+	else
+	{
+		theFocusedElem = document.getElementById('changePortButton');
+	}
+	
+	theFocusedElem.focus();
+	
+}
+
+function focusDown()
+{
+	console.log("down");
+	
+	if(theFocusedElem.id === "changePortButton")
+	{
+		theFocusedElem = GetSelectedPort();
+	}
+	else
+	{
+		theFocusedElem = document.getElementById('changePortButton');
+	}
+	
+	theFocusedElem.focus();
+}
+
+
+function ChangePort()
+{
+	console.log("change port");
+	
+	var selectedPortElem = GetSelectedPort();
+	var vidSource = portMap.get(selectedPortElem.id);
+	
+	tizen.tvwindow.setSource(vidSource, successCB, errorCB);
+	//		tizen.application.getCurrentApplication().exit();
+	tizen.application.getCurrentApplication().hide();
+	return;
+}
+
+function successCB(source, type)
+{
+	var msg = "setSource() is successfully done, source type: " + source.type +
+    ", source port number: " + source.number + ", signal provided: " + source.signal;
+  console.log(msg);
+}
+
+function errorCB(error)
+{
+	var msg = "setSource() is failed, error name: " + error.name + ", error message: " + error.message; 
+  console.log(msg);
+}
+
+/*
+function UpdaterServerAddress()
+{
+	var servreName = document.getElementById('ServerName');
+	alert(servreName);
+}
+*/
+
+
+/*
+function startTime()
+{
+    var today = new Date();
+    var h = today.getHours();
+    var m = today.getMinutes();
+    var s = today.getSeconds();
+    m = checkTime(m);
+    s = checkTime(s);
+    document.getElementById('divbutton1').innerHTML='Current time: ' + h + ':' + m + ':' + s;
+    setTimeout(startTime, 10);
+}
+
+function checkTime(i)
+{
+    if (i < 10) {
+        i='0' + i;
+    }
+    return i;
+}
+*/

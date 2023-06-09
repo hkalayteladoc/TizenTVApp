@@ -1,0 +1,135 @@
+var checkTime;
+
+//Initialize function
+var init = function ()
+{
+    // TODO:: Do your initialization job
+    console.log('init() called');
+    
+    document.addEventListener('visibilitychange', function() 
+    {
+        if(document.hidden)
+        {
+            // Something you want to do when hide or exit.
+        } else 
+        {
+            // Something you want to do when resume.
+        }
+    });
+ 
+    // add eventListener for keydown
+    document.addEventListener('keydown', function(e) 
+    {
+    	switch(e.keyCode){
+    	case 37: //LEFT arrow
+    		break;
+    	case 38: //UP arrow
+    		break;
+    	case 39: //RIGHT arrow
+    		break;
+    	case 40: //DOWN arrow
+    		break;
+    	case 13: //OK button
+    		break;
+    	case 10009: //RETURN button
+		tizen.application.getCurrentApplication().exit();
+    		break;
+    	default:
+    		console.log('Key code : ' + e.keyCode);
+    		break;
+    	}
+    });
+    
+    startTime();
+};
+// window.onload can work without <body onload="">
+window.onload = init;
+
+
+function onSuccessCallback(videoSource)
+{
+  console.log("The cpu load is " + cpu.load);
+  document.getElementById('divbutton1').innerHTML = videoSource.connected;
+}
+
+function onErrorCallback(error)
+{
+  console.log("An error occurred " + error.message);
+  document.getElementById('divbutton1').innerHTML = error.message;
+}
+
+function startTime()
+{
+    var today = new Date();
+    var h = today.getHours();
+    var m = today.getMinutes();
+    var s = today.getSeconds();
+    m = checkTime(m);
+    s = checkTime(s);
+    
+    var msg = "";
+    
+    try
+    {
+     // var bluetooth = tizen.systeminfo.getCapability("http://tizen.org/feature/network.bluetooth");
+      //var sysinfo = tizen.systeminfo.getCapability("http://tizen.org/feature/SystemInfoDisplay");
+      //var sysinfo = tizen.SystemInfoDisplay.brightness;
+      //msg = "Bluetooth = " + bluetooth + "<BR>"; 
+      //msg += "sysinfo = " + sysinfo + "<BR>"; 
+      /* Checks if a device supports Bluetooth API. */
+      //var manufacturer = tizen.systeminfo.getCapability("http://tizen.org/system/manufacturer");
+      //msg = "Manufacturer = " + manufacturer + "\n";
+
+      //var buildRelease = tizen.systeminfo.getCapability("http://tizen.org/system/build.release");
+      //msg += "BuildRelease = " + buildRelease + "\n";
+      
+    	
+    	tizen.systeminfo.getPropertyValue("VideoSource", onSuccessCallback, onErrorCallback);    	
+    	
+      msg += "Total Memory = " + tizen.systeminfo.getTotalMemory() + "<BR>"; 
+      msg += "Available Memory = " + tizen.systeminfo.getAvailableMemory() + "<BR>";
+
+      msg += "video Source = " + tizen.systeminfo.getPropertyValue() + "<BR>";
+
+      var coreAPIver = tizen.systeminfo.getCapability("http://tizen.org/feature/platform.core.api.version");
+      msg += "coreAPIver = " + coreAPIver + "<BR>";
+
+      var nativeAPIver = tizen.systeminfo.getCapability("http://tizen.org/feature/platform.native.api.version");
+      msg += "coreAPIver = " + coreAPIver + "<BR>";
+      
+      var platformver = tizen.systeminfo.getCapability("http://tizen.org/feature/platform.version");
+      msg += "platformver = " + platformver + "<BR>";
+      
+      var platformWebAPIver = tizen.systeminfo.getCapability("http://tizen.org/feature/platform.web.api.version");
+      msg += "platformWebAPIver = " + platformWebAPIver + "<BR>";
+      
+      var platformVerName = tizen.systeminfo.getCapability("http://tizen.org/feature/platform.version.name");
+      msg += "platformVerName = " + platformVerName + "<BR>";
+      
+      var profileName = tizen.systeminfo.getCapability("http://tizen.org/feature/profile");
+      msg += "profileName = " + profileName + "<BR>";
+
+      //msg += "model = " + tizen.device.model() + "<BR>"; 
+      //msg += "model = " + model + "<BR>";
+      
+
+      
+    }
+    catch (error)
+    {
+    	msg = "Error name: " + error.name + ", message: " + error.message;
+      console.log("Error name: " + error.name + ", message: " + error.message);
+    }    
+    
+    document.getElementById('divbutton1').innerHTML = msg;
+    //document.getElementById('divbutton1').innerHTML='Current time: ' + h + ':' + m + ':' + s;
+    //setTimeout(startTime, 10);
+}
+
+function checkTime(i)
+{
+    if (i < 10) {
+        i='0' + i;
+    }
+    return i;
+}

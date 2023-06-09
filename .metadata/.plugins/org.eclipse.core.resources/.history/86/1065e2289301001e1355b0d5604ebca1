@@ -1,0 +1,96 @@
+/**
+ * Teladoc Helath Inc. Copyright (c) 2023. All rights reserved.
+ */
+
+/*
+class httpComm()
+{
+	var message;
+};
+
+*/
+
+
+function StartPostPoll()
+{
+	httpComm();
+}
+
+
+
+function reqListener(e)
+{
+	
+	console.log("type: " + e.type + "   Loaded: " + e.loaded);
+	console.log("status: " + this.status);
+	console.log("response: " + this.response);
+	console.log("responseurl: " + this.responseURL);
+	console.log("Text: " + this.responseText);
+	console.log("all headers: " + this.getAllResponseHeaders());
+}
+
+
+async function httpComm()
+{
+	/*
+	const req = new XMLHttpRequest();
+	
+	req.addEventListener("load", reqListener);
+	req.addEventListener("progress", reqListener);
+	req.addEventListener("error", reqListener);
+	req.addEventListener("abort", reqListener);	
+	
+	req.addEventListener("loadstart", reqListener);
+	req.addEventListener("loadend", reqListener);
+	
+	req.open("GET", "http://www.somethinexample.crap");
+	req.setRequestHeader('Content-Type', 'application/json');
+	req.send();
+	
+	
+	
+		var serverBaseURL = "http://" + serverAddress + ":" + serverPort;
+		const response = await fetch(serverBaseURL + "/change", 
+				{
+					method:"post",
+					headers:{ "Content-Type": "application/json"},
+					body: JSON.stringify(""),
+				});
+		const jsonData = await response;
+		console.log(jsonData);
+		
+		if(jsonData.status === 404)
+		{
+			console.log("it's ok to ignore and keep polling");
+		}
+	
+	
+	*/
+	
+	try
+	{
+		var serverBaseURL = "http://" + serverAddress + ":" + serverPort;
+		console.log(serverBaseURL);
+		
+		const response = fetch(serverBaseURL + "/change", 
+				{
+					method:"get",
+					headers:{ "Content-Type": "application/json"},
+				});
+		console.log("sent ");
+		console.log(response);
+		const jsonData = await response;
+		console.log(jsonData);
+		
+		if(jsonData.status === 404)
+		{
+			console.log("it's ok to ignore and keep polling");
+		}
+	}
+	catch(e)
+	{
+		console.log(e);	
+	}
+}
+
+
