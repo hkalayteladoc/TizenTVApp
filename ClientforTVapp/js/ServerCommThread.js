@@ -112,6 +112,9 @@ function successCB(windowRect, type)
 
 async function httpComm()
 {
+	var pipSelection = GetPipSelection();
+	//console.log(pipSelection);
+	
 	
 	try
 	{
@@ -154,6 +157,7 @@ async function httpComm()
 		console.log("here2" + serverBaseURL);
 			const responseData = await response.json();
 			console.log(responseData);
+			console.log(typeof responseData);
 			if(typeof responseData === "string")
 			{
 				systemInfoData = JSON.parse(responseData);
@@ -168,7 +172,10 @@ async function httpComm()
 			//msg.data = tvInfo;
 			//postMessage(JSON.stringify(msg));
 
-			setTimeout(function() {DisplayDeviceInfo(); }, 500);
+			if((JSON.stringify(systemInfoData) != "") && (JSON.stringify(systemInfoData) != "{}"))
+			{
+				setTimeout(function() {DisplayDeviceInfo(); }, 500);
+			}
 		}
 
 		if( JSON.stringify(ports) === "[]")
@@ -198,7 +205,10 @@ async function httpComm()
 			//msg.data = tvInfo;
 			//postMessage(JSON.stringify(msg));
 
-			setTimeout(function() { FillSelector(); }, 500);
+			if((JSON.stringify(ports) != "") && (JSON.stringify(ports) != "[]"))
+			{
+				setTimeout(function() { FillSelector(); }, 500);
+			}
 			
 		}
 		console.log("here3 not in if");
@@ -245,208 +255,26 @@ async function httpComm()
 			hasPortChanged = false;
 		}
 
-		return;
-		/*
-		const response = await fetch(serverBaseURL + "/change", 
-				{
-					method:"get",
-					headers:{ "Content-Type": "application/json"},
-				});
-		
-		const responseData = await response.json();
-		//responseData = responseDataObj.text();
-		console.log(responseData);
-		//console.log(responseData.body);
-		//changeData = JSON.parse(responseData.body);
-		//console.log(changeData);
 
-		if(responseData.changePort === "empty")
-		{
-			console.log(portInfo);
-			console.log(tvInfo);
-			
-			if((portInfo === "") || (tvInfo === "") )
-			{
-				var msg = {};
-				msg.id = "request";
-				msg.data = "portInfo";
-				postMessage(JSON.stringify(msg));
-
-				msg.data = "tvInfo";
-				postMessage(JSON.stringify(msg));
-			}
-			else
-			{
-				var response1 = await fetch(serverBaseURL + "/ports", 
-						{
-							method:"post",
-							headers:{ "Content-Type": "application/json"},
-							body: JSON.stringify(portInfo),
-						});
-				var jsonData1 = await response1;
-				console.log(jsonData1);
-				
-				if(response1.status === 200)
-				{
-					response1 = await fetch(serverBaseURL + "/data", 
-							{
-								method:"post",
-								headers:{ "Content-Type": "application/json"},
-								body: JSON.stringify(tvInfo),
-							});
-					jsonData1 = await response1;
-					console.log(jsonData1);
-				}
-			}
-		}
-		else if(responseData.changePort != "")
+		if( prevPipSelection != pipSelection )
 		{
 			var msg = {};
-			msg.id = "changePort";
-			msg.data = responseData.changePort;
-			postMessage(JSON.stringify(msg));
-
-		}
-		*/
-		
-		if(responseData.status === 404)
-		{
-			console.log("it's ok to ignore and keep polling");
-		}
-	}
-	catch(e)
-	{
-		console.log(e);	
-	}
-
-}
-
-
-
-async function httpComm_old()
-{
-	//console.log(serverPostIntervalID);
-	/*
-	const req = new XMLHttpRequest();
-	
-	req.addEventListener("load", reqListener);
-	req.addEventListener("progress", reqListener);
-	req.addEventListener("error", reqListener);
-	req.addEventListener("abort", reqListener);	
-	
-	req.addEventListener("loadstart", reqListener);
-	req.addEventListener("loadend", reqListener);
-	
-	req.open("GET", "http://www.somethinexample.crap");
-	req.setRequestHeader('Content-Type', 'application/json');
-	req.send();
-	
-	
-	
-		var serverBaseURL = "http://" + serverAddress + ":" + serverPort;
-		const response = await fetch(serverBaseURL + "/change", 
-				{
-					method:"post",
-					headers:{ "Content-Type": "application/json"},
-					body: JSON.stringify(""),
-				});
-		const jsonData = await response;
-		console.log(jsonData);
-		
-		if(jsonData.status === 404)
-		{
-			console.log("it's ok to ignore and keep polling");
-		}
-	
-	
-	*/
-	
-	try
-	{
-		var serverBaseURL = "http://" + serverAddress + ":" + serverPort;
-		console.log(serverBaseURL);
-		
-		/*
-		const response = fetch(serverBaseURL + "/change", 
-				{
-					method:"get",
-					headers:{ "Content-Type": "application/json"},
-				});
-		const responseDataObj = await response;
-		responseData = responseDataObj.text();
-		console.log(responseData);
-		console.log(responseData.body);
-		changeData = JSON.parse(responseData.body);
-		console.log(changeData);
-		*/
-
-		const response = await fetch(serverBaseURL + "/change", 
-				{
-					method:"get",
-					headers:{ "Content-Type": "application/json"},
-				});
-		
-		const responseData = await response.json();
-		//responseData = responseDataObj.text();
-		console.log(responseData);
-		//console.log(responseData.body);
-		//changeData = JSON.parse(responseData.body);
-		//console.log(changeData);
-		
-		if(responseData.changePort === "empty")
-		{
 			
-			console.log(JSON.stringify(ports));
-			console.log(JSON.stringify(systemInfoData));
-
-			var response1 = await fetch(serverBaseURL + "/ports", 
+			const response = await fetch(serverBaseURL + "/changePip",
 					{
 						method:"post",
 						headers:{ "Content-Type": "application/json"},
-						body: JSON.stringify(ports),
+						body: JSON.stringify({changePip:pipSelection}),
 					});
-			var jsonData1 = await response1;
-			console.log(jsonData1);
 			
-			if(response1.status === 200)
-			{
-				response1 = await fetch(serverBaseURL + "/data", 
-						{
-							method:"post",
-							headers:{ "Content-Type": "application/json"},
-							body: JSON.stringify(systemInfoData),
-						});
-				jsonData1 = await response1;
-				console.log(jsonData1);
-			}
+			const responseData = await response;
+			console.log(responseData);
 			
-			
+			prevPipSelection = pipSelection;
 		}
-		
-		if(responseData.changePort === "")
-		{
-			/*
-			var response1 = await fetch(serverBaseURL + "/ports", 
-					{
-						method:"get",
-						headers:{ "Content-Type": "application/json"},
-					});
-			var jsonData1 = await response1.json();
-			console.log(jsonData1);
-			
-			if(response1.status === 200)
-			{
-				response1 = await fetch(serverBaseURL + "/data", 
-						{
-							method:"get",
-							headers:{ "Content-Type": "application/json"},
-						});
-				jsonData1 = await response1.json();
-				console.log(jsonData1);
-			}
-			*/
-		}
-		
+
+
+		return;
 		
 		if(responseData.status === 404)
 		{
@@ -457,6 +285,9 @@ async function httpComm_old()
 	{
 		console.log(e);	
 	}
+
 }
+
+
 
 

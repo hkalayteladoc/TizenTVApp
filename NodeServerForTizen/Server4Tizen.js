@@ -11,6 +11,7 @@ var tvData = {};
 var tvPorts = [];
 var changePortData = '';
 var setPort = "TV1";
+var changePipData = "FULL";
 
 const requestListener = async function (req, res) 
 {
@@ -100,6 +101,14 @@ async function StoreData(jsonDataString, reqURL)
 			setPortChanges = JSON.parse(jsonDataString);
 			setPort = setPortChanges.setPortChange;
             break			
+        case "/changePip":     /// set in browser, in form TV
+			console.log(jsonDataString);
+			pipChanges = JSON.parse(jsonDataString);
+			if(pipChanges.changePip != "")
+			{
+				changePipData = pipChanges.changePip;
+			}
+            break
         default:
 			retCode = 404;
             retJson = JSON.stringify({error:"invalid url"});
@@ -118,12 +127,17 @@ async function GetData(reqURL)
 	{
         case "/data":
 			retData = JSON.stringify(tvData);
+	console.log(typeof retData);
             break
         case "/ports":
 			retData = JSON.stringify(tvPorts);
             break
         case "/change":
-			if(JSON.stringify(tvPorts) === '[]')
+			if((JSON.stringify(tvPorts) === '[]') ||
+				(JSON.stringify(tvPorts) === '') ||
+				(JSON.stringify(tvData) === '{}') ||
+				(JSON.stringify(tvData) === '')
+			  )
 			{
 		console.log('here');
 				
@@ -136,6 +150,9 @@ async function GetData(reqURL)
 			}
 			changePortData = ''; // reset the change port once sent
             break
+        case "/changePip":     /// set in browser, in form TV
+				retData = JSON.stringify({changePip:changePipData});
+            break
         case "/setPort":		// set in TV inform browser
 			retData = JSON.stringify({setPortChange:setPort});
 			setPort = "";
@@ -144,6 +161,7 @@ async function GetData(reqURL)
 			retCode = 404;
             retData = JSON.stringify({error:"invalid url"});
     }	
+	console.log(retData);
 
 	return [ retCode, retMessage, retData ];
 	

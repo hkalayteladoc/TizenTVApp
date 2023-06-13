@@ -15,12 +15,14 @@ class httpComm()
 var intervalledPosts = 0;
 var serverAddress= ""; 
 var serverPort = "";
+var serverBaseURL = "";
+
 
 var portInfo = "";
 var tvInfo = "";
 
-var setPort = "";
-var prevSetPort = "";
+var setPort = "APP";
+var prevSetPort = "APP";
 
 var isStop = false;
 
@@ -37,18 +39,18 @@ function StartPostPoll()
 	//console.log(serverPostIntervalID);
 	//serverPostIntervalID = setInterval(httpComm, 10000);
 	intervalledPosts = setInterval(httpComm, 3000);
-
+	
 	onmessage = MessageHandler;
 }
 
 
-function ConnectHandler(event)
-{
-	console.log("ConnectHandler");
-	  port = event.ports[0];
-	  port.onmessage = MessageHandler;
-	  StartPostPoll();
-}
+//function ConnectHandler(event)
+//{
+//	console.log("ConnectHandler");
+//	  port = event.ports[0];
+//	  port.onmessage = MessageHandler;
+//	  StartPostPoll();
+//}
 
 function MessageHandler(e)
 {
@@ -62,6 +64,10 @@ function MessageHandler(e)
 		console.log("serverInfo: " + serverInfo);
 		serverAddress = serverInfo.serverAddress; 
 		serverPort = serverInfo.serverPort;
+
+		serverBaseURL = "http://" + serverAddress + ":" + serverPort;
+		SendData();
+		
 		break;
 
 	case "portInfo":
@@ -87,6 +93,16 @@ function MessageHandler(e)
 			return;
 		}
 		break;
+		
+	case "changePort": // from main thread .... from remote
+		if(msg.data === "APP")
+		{
+			var msg = {};
+			msg.id = "changePort";
+			msg.data = "APP";
+			postMessage(JSON.stringify(msg));
+		}
+		
 	default:
 		console.log("Error: Invalid message : " + msg);
 		break;
@@ -116,33 +132,22 @@ function successCB(windowRect, type)
 
 async function httpComm()
 {
+	if(serverBaseURL === "")
+	{
+		return;
+	}
 	
 	try
 	{
-		var serverBaseURL = "http://" + serverAddress + ":" + serverPort;
 		console.log(serverBaseURL);
 
-		/*
-		const response = fetch(serverBaseURL + "/change", 
-				{
-					method:"get",
-					headers:{ "Content-Type": "application/json"},
-				});
-		const responseDataObj = await response;
-		responseData = responseDataObj.text();
-		console.log(responseData);
-		console.log(responseData.body);
-		changeData = JSON.parse(responseData.body);
-		console.log(changeData);
-		*/
-
-		const response = await fetch(serverBaseURL + "/change", 
+		var response = await fetch(serverBaseURL + "/change", 
 				{
 					method:"get",
 					headers:{ "Content-Type": "application/json"},
 				});
 		
-		const responseData = await response.json();
+		var responseData = await response.json();
 		//responseData = responseDataObj.text();
 		console.log(responseData);
 		//console.log(responseData.body);
@@ -166,26 +171,7 @@ async function httpComm()
 			}
 			else
 			{
-				var response1 = await fetch(serverBaseURL + "/ports", 
-						{
-							method:"post",
-							headers:{ "Content-Type": "application/json"},
-							body: JSON.stringify(portInfo),
-						});
-				var jsonData1 = await response1;
-				console.log(jsonData1);
-				
-				if(response1.status === 200)
-				{
-					response1 = await fetch(serverBaseURL + "/data", 
-							{
-								method:"post",
-								headers:{ "Content-Type": "application/json"},
-								body: JSON.stringify(tvInfo),
-							});
-					jsonData1 = await response1;
-					console.log(jsonData1);
-				}
+				SendData();
 			}
 		}
 		else if(responseData.changePort != "")
@@ -198,27 +184,6 @@ async function httpComm()
 			setPort = responseData.changePort;
 			prevSetPort = responseData.changePort;
 			
-			
-			/*
-			var response1 = await fetch(serverBaseURL + "/ports", 
-					{
-						method:"get",
-						headers:{ "Content-Type": "application/json"},
-					});
-			var jsonData1 = await response1.json();
-			console.log(jsonData1);
-			
-			if(response1.status === 200)
-			{
-				response1 = await fetch(serverBaseURL + "/data", 
-						{
-							method:"get",
-							headers:{ "Content-Type": "application/json"},
-						});
-				jsonData1 = await response1.json();
-				console.log(jsonData1);
-			}
-			*/
 		}
 
 		if( setPort != prevSetPort)
@@ -238,6 +203,29 @@ async function httpComm()
 			
 			prevSetPort = setPort;
 		}
+
+		
+		
+		response = await fetch(serverBaseURL + "/changePip", 
+				{
+					method:"get",
+					headers:{ "Content-Type": "application/json"},
+				});
+		
+		responseData = await response.json();
+		//responseData = responseDataObj.text();
+		console.log(responseData);
+		
+		if(responseData.changePip != "")
+		{
+			var msg = {};
+			msg.id = "changePip";
+			msg.data = responseData.changePip;
+			postMessage(JSON.stringify(msg));
+		}
+		
+		
+		
 		
 		if(responseData.status === 404)
 		{
@@ -252,141 +240,43 @@ async function httpComm()
 }
 
 
-
-async function httpComm_old()
+async function SendData()
 {
-	//console.log(serverPostIntervalID);
-	/*
-	const req = new XMLHttpRequest();
+	var response1 = await fetch(serverBaseURL + "/ports", 
+			{
+				method:"post",
+				headers:{ "Content-Type": "application/json"},
+				body: JSON.stringify(portInfo),
+			});
+	var jsonData1 = await response1;
+	console.log(jsonData1);
 	
-	req.addEventListener("load", reqListener);
-	req.addEventListener("progress", reqListener);
-	req.addEventListener("error", reqListener);
-	req.addEventListener("abort", reqListener);	
-	
-	req.addEventListener("loadstart", reqListener);
-	req.addEventListener("loadend", reqListener);
-	
-	req.open("GET", "http://www.somethinexample.crap");
-	req.setRequestHeader('Content-Type', 'application/json');
-	req.send();
-	
-	
-	
-		var serverBaseURL = "http://" + serverAddress + ":" + serverPort;
-		const response = await fetch(serverBaseURL + "/change", 
+	if(response1.status === 200)
+	{
+		response1 = await fetch(serverBaseURL + "/data", 
 				{
 					method:"post",
 					headers:{ "Content-Type": "application/json"},
-					body: JSON.stringify(""),
+					body: JSON.stringify(tvInfo),
 				});
-		const jsonData = await response;
-		console.log(jsonData);
-		
-		if(jsonData.status === 404)
-		{
-			console.log("it's ok to ignore and keep polling");
-		}
-	
-	
-	*/
-	
-	try
-	{
-		var serverBaseURL = "http://" + serverAddress + ":" + serverPort;
-		console.log(serverBaseURL);
-		
-		/*
-		const response = fetch(serverBaseURL + "/change", 
-				{
-					method:"get",
-					headers:{ "Content-Type": "application/json"},
-				});
-		const responseDataObj = await response;
-		responseData = responseDataObj.text();
-		console.log(responseData);
-		console.log(responseData.body);
-		changeData = JSON.parse(responseData.body);
-		console.log(changeData);
-		*/
-
-		const response = await fetch(serverBaseURL + "/change", 
-				{
-					method:"get",
-					headers:{ "Content-Type": "application/json"},
-				});
-		
-		const responseData = await response.json();
-		//responseData = responseDataObj.text();
-		console.log(responseData);
-		//console.log(responseData.body);
-		//changeData = JSON.parse(responseData.body);
-		//console.log(changeData);
-		
-		if(responseData.changePort === "empty")
-		{
-			
-			console.log(JSON.stringify(ports));
-			console.log(JSON.stringify(systemInfoData));
-
-			var response1 = await fetch(serverBaseURL + "/ports", 
-					{
-						method:"post",
-						headers:{ "Content-Type": "application/json"},
-						body: JSON.stringify(ports),
-					});
-			var jsonData1 = await response1;
-			console.log(jsonData1);
-			
-			if(response1.status === 200)
-			{
-				response1 = await fetch(serverBaseURL + "/data", 
-						{
-							method:"post",
-							headers:{ "Content-Type": "application/json"},
-							body: JSON.stringify(systemInfoData),
-						});
-				jsonData1 = await response1;
-				console.log(jsonData1);
-			}
-			
-			
-		}
-		
-		if(responseData.changePort === "")
-		{
-			/*
-			var response1 = await fetch(serverBaseURL + "/ports", 
-					{
-						method:"get",
-						headers:{ "Content-Type": "application/json"},
-					});
-			var jsonData1 = await response1.json();
-			console.log(jsonData1);
-			
-			if(response1.status === 200)
-			{
-				response1 = await fetch(serverBaseURL + "/data", 
-						{
-							method:"get",
-							headers:{ "Content-Type": "application/json"},
-						});
-				jsonData1 = await response1.json();
-				console.log(jsonData1);
-			}
-			*/
-		}
-		
-		
-		if(responseData.status === 404)
-		{
-			console.log("it's ok to ignore and keep polling");
-		}
+		jsonData1 = await response1;
+		console.log(jsonData1);
 	}
-	catch(e)
+	
+	if(response1.status === 200)
 	{
-		console.log(e);	
+		var msg = {};
+		msg.setPortChange = prevSetPort;
+		
+		// port was changed
+		var response1 = await fetch(serverBaseURL + "/setPort", 
+				{
+					method:"post",
+					headers:{ "Content-Type": "application/json"},
+					body: JSON.stringify(msg),
+				});
+		var jsonData1 = await response1;
+		console.log(jsonData1);
 	}
 }
-
 

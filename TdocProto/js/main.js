@@ -3,6 +3,12 @@
  */
 
 
+var keyNameColorF0Red = "ColorF0Red";
+var keyNameColorF1Green = "ColorF1Green";
+var keyNameColorF2Yellow = "ColorF2Yellow";
+var keyNameColorF3Blue = "ColorF3Blue";
+
+
 //var checkTime;
 //var stopPostPoll = false;
 
@@ -10,8 +16,7 @@ var workerThread = null;
 
 //var serverAddress = "a11611it.ith.local";
 var serverAddress = "10.231.64.3"; // ip for "a11611it.ith.local";
-
-//var serverAddress = "a11562it.teladoc.net";
+//var serverAddress = "192.168.64.1" ; //"a11562it.teladoc.net";
 var serverPort = "8000";
 
 var serverPostIntervalID = 0; // the ID returned by setInterval
@@ -68,6 +73,7 @@ var init = function ()
     // add eventListener for keydown
     document.addEventListener('keydown', function(e)
     {
+    	console.log(e);
     	switch(e.keyCode)
     	{
     	case 37: //LEFT arrow
@@ -88,6 +94,10 @@ var init = function ()
     	case 32: //OK button
     		ButtonClick();
     		break;
+
+    		console.log(e);
+    		break;
+    		
     	case 10009: //RETURN button
 		tizen.application.getCurrentApplication().exit();
     		break;
@@ -95,14 +105,59 @@ var init = function ()
     		console.log('Key code : ' + e.keyCode);
     		break;
     	}
+    	
+    	switch(e.code)
+    	{
+    	case keyNameColorF0Red:
+    	case "F1":
+    		//console.Log("here");
+			var msg = {};
+			msg.id = "changePort";
+			msg.data = "APP";
+			workerThread.postMessage(JSON.stringify(msg));
+    		break;
+    		
+    	case keyNameColorF1Green:
+    	case "F2":
+    		SelectThePort(1);
+    		theFocusedElem = document.getElementById('changePortButton');
+    		theFocusedElem.focus();
+    		ButtonClick();
+    		break;
+    		
+    	case keyNameColorF2Yellow:
+    	case "F3":
+    		SelectThePort(2);
+    		theFocusedElem = document.getElementById('changePortButton');
+    		theFocusedElem.focus();
+    		ButtonClick();
+    		break;
+    		
+    	case keyNameColorF3Blue:
+    	case "F4":
+    		SelectThePort(3);
+    		theFocusedElem = document.getElementById('changePortButton');
+    		theFocusedElem.focus();
+    		ButtonClick();
+    		break;
+    		
+    	
+    	default:
+    		console.log('Key code : ' + e.keyCode);
+    		break;
+    	}
+    	
+    	
     });
 
 	//tizen.systeminfo.getPropertyValue("VIDEOSOURCE", ReadPortsAndFillSelector);
     allTabIndexElems = document.querySelectorAll('[tabindex]');
     tabIndexCount = allTabIndexElems.length;
 
-    //focusNextTabIndex();	// make sure there is a focus
-
+    
+    RegisterKeys();
+    
+    
 	ReadDeviceInfo();
 	setTimeout(function() {FillSelector(); DisplayDeviceInfo(); }, 500);
 	
@@ -170,6 +225,34 @@ var init = function ()
 	
 	
 };
+
+
+function SelectThePort(num)
+{
+	var elems = document.getElementsByName('portSelector');
+	for(var i = 0; i < elems.length; i++)
+	{
+		if((i+1) === num)
+		{
+			elems[i].checked = true;
+			return elems[i]; 
+		}
+	}
+	
+	// if it's here. none are checked
+	elems[0].check = true;
+	return elems[0];
+}
+
+
+function RegisterKeys()
+{
+	tizen.tvinputdevice.registerKey(keyNameColorF0Red);
+	tizen.tvinputdevice.registerKey(keyNameColorF1Green);
+	tizen.tvinputdevice.registerKey(keyNameColorF2Yellow);
+	tizen.tvinputdevice.registerKey(keyNameColorF3Blue);
+}
+
 
 
 // window.onload can work without <body onload="">
@@ -242,28 +325,71 @@ function FillSelector()
 	var currentPortName = currentVideoSource.type + currentVideoSource.number;
 	console.log(currentPortName);
 	
+	var portNameApp = "APP";
+	var msg = {};
+	msg.id = "SetPort";
+	msg.data = portNameApp;
+	workerThread.postMessage(JSON.stringify(msg));
+
+    let input = document.createElement("input");
+    input.type = "checkbox";
+    input.id = portNameApp;
+    input.name = "portApp";
+    input.checked = true;
+    input.disabled = true;
+    //tabIndexCount++;
+    //input.setAttribute("tabindex", tabIndexCount.toString());
+    //console.log(input);
+
+    let label = document.createElement("label");
+    label.innerText = portNameApp;
+    //label.setAttribute("class", "checkLabel");
+    //label.setAttribute("for", portNameApp);
+    
+    //input.appendChild(label);
+    
+    portSelectorElem.appendChild(input);		
+    portSelectorElem.appendChild(label);		
+	
+	
 	//videoSources = systemInfo.videoSources;
 	for(var i = 0; i < videoSources.connected.length; i++)
 	{
 		var portName = videoSources.connected[i].type + videoSources.connected[i].number; 
 		
-		var isSelected = false;
+		var isChecked = false;
 		if(currentPortName === portName)
 		{
-			isSelected = true;
+			//isChecked = true;
 			
-			var msg = {};
-			msg.id = "SetPort";
-			msg.data = portName;
-			workerThread.postMessage(JSON.stringify(msg));
+			//var msg = {};
+			//msg.id = "SetPort";
+			//msg.data = portName;
+			//workerThread.postMessage(JSON.stringify(msg));
 			
 		}
 		
+	    AddPortOption(portSelectorElem, portName, isChecked)
+	    
+	}
+	
+	
+    allTabIndexElems = document.querySelectorAll('[tabindex]');
+    tabIndexCount = allTabIndexElems.length; 
+	//console.log("allTabIndexElems-1: " + allTabIndexElems.length);
+    
+    focusNextTabIndex();	// make sure there is a focus
+	
+}
+
+
+function AddPortOption(portSelectorElem, portName, isChecked)
+{
 	    let input = document.createElement("input");
 	    input.type = "radio";
 	    input.id = portName;
 	    input.name = "portSelector";
-	    input.checked = isSelected;
+	    input.checked = isChecked;
 	    tabIndexCount++;
 	    input.setAttribute("tabindex", tabIndexCount.toString());
 	    //console.log(input);
@@ -277,17 +403,8 @@ function FillSelector()
 	    
 	    portSelectorElem.appendChild(input);		
 	    portSelectorElem.appendChild(label);		
-	}
-	
-	
-    allTabIndexElems = document.querySelectorAll('[tabindex]');
-    tabIndexCount = allTabIndexElems.length; 
-	//console.log("allTabIndexElems-1: " + allTabIndexElems.length);
-    
-    focusNextTabIndex();	// make sure there is a focus
 	
 }
-
 
 
 
@@ -378,6 +495,9 @@ function GetSelectedPort()
 			return elems[i];
 		}
 	}
+	
+	// if it's here. none are checked
+	return elems[0];
 }
 
 function focusUp()

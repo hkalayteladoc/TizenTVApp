@@ -3,6 +3,9 @@
  */
 
 
+var currPip = "FULL";
+
+
 function successSysInfoProperty(property)
 {
 	//systemInfo.tvModel = property.model;
@@ -105,11 +108,24 @@ https://docs.tizen.org/application/web/api/latest/device_api/tv/tizen/cordova/ne
 	
 	//console.log("systemInfo.TVmodel 3 = " + systemInfo.tvModel);
 	
+	
+	OutputSupportedKeys();
+	
 }
 
 
 
-
+function OutputSupportedKeys()
+{
+	var i;
+	var keyCode = {};
+	var supportedKeys;
+	supportedKeys = tizen.tvinputdevice.getSupportedKeys();
+	for (i = 0; i < supportedKeys.length; i++)
+	{
+	   console.log(supportedKeys[i].name + " = " + supportedKeys[i].code);
+	}
+}
 
 
 function WorkerMessage(e)
@@ -117,7 +133,7 @@ function WorkerMessage(e)
 	
 	var msg = {"id":"nothing", "data":{}};
 
-	
+	//console.log(e);
 	console.log(e.data);
 	msg = JSON.parse(e.data);
 	console.log(msg);
@@ -147,15 +163,74 @@ function WorkerMessage(e)
 
 	case "changePort":
 		console.log(msg.data);
-		var vidSource = portMap.get(msg.data);
-		if(vidSource == null)
+		if(msg.data === "APP")
 		{
-			console.log("Error: invalid change port request " + msg.data);
-			break;
+			try
+			{
+				tizen.tvwindow.show(successCBShow, null, ["0", "0px", "100%", "100%"], "MAIN", "BEHIND");
+			}
+			catch (error)
+			{
+			  console.log("Error name: " + error.name + ", error message: " + error.message);
+			}
 		}
-		tizen.tvwindow.setSource(vidSource, successCBSrc, errorCBSrc);
-		tizen.application.getCurrentApplication().hide();
+		else
+		{
+			var vidSource = portMap.get(msg.data);
+			if(vidSource == null)
+			{
+				console.log("Error: invalid change port request " + msg.data);
+				break;
+			}
+			tizen.tvwindow.setSource(vidSource, successCBSrc, errorCBSrc);
+			tizen.tvwindow.show(successCBShow, null, ["0", "0px", "100%", "100%"], "MAIN", "FRONT");
+			//tizen.tvwindow.hide(successCBHide);
+			//tizen.application.getCurrentApplication().hide();
+		}
 		break;
+		
+		
+	case "changePip":
+		console.log(msg.data);
+		/*
+		if(currPip != msg.data)
+		{
+			tempPip = msg.data;
+			
+			if(tempPip === "FULL")
+			{
+				try
+				{
+					tizen.tvwindow.show(successCBShow, null, ["0", "0px", "100%", "100%"], "MAIN", "FRONT");
+				}
+				catch (error)
+				{
+				  console.log("Error name: " + error.name + ", error message: " + error.message);
+				}
+			}
+			else if (tempPip == "PEEK")
+			{
+				try
+				{
+					tizen.tvwindow.show(successCBShow, null, ["0", "0px", "25%", "25%"], "MAIN", "FRONT");
+				}
+				catch (error)
+				{
+				  console.log("Error name: " + error.name + ", error message: " + error.message);
+				}
+			}
+			else
+			{
+				console.log("Error invalid data: ", tempPip);
+			}
+			
+			currPip = tempPip;
+			console.log(currPip);
+		}
+		*/
+		break;
+		
+		
 	case "stop":
 		isStop = true;
 		if(msg.data )
@@ -200,7 +275,24 @@ function WorkerMessage(e)
 }
 
 
+function successCBSHide(windowRect)
+{
+	console.log("Hidden");
+  /* You will get exactly what you put as rectangle argument of show() through windowRect. */
+  /* Expected result: ["0", "0px", "50%", "540px"] */
+  console.log("Rectangle: [" + windowRect[0] + ", " + windowRect[1] + ", " + windowRect[2] + ", " +
+              windowRect[3] + "]");
+}
 
+
+function successCBShow(windowRect, type)
+{
+  /* You will get exactly what you put as rectangle argument of show() through windowRect. */
+  /* Expected result: ["0", "0px", "50%", "540px"] */
+  console.log("Rectangle: [" + windowRect[0] + ", " + windowRect[1] + ", " + windowRect[2] + ", " +
+              windowRect[3] + "]");
+  console.log("Type: " + type);
+}
 
 
 
@@ -213,7 +305,8 @@ function ChangePort()
 	
 	tizen.tvwindow.setSource(vidSource, successCBSrc, errorCBSrc);
 	//		tizen.application.getCurrentApplication().exit();
-	tizen.application.getCurrentApplication().hide();
+	tizen.tvwindow.show(successCBShow, null, ["0", "0px", "100%", "100%"], "MAIN", "FRONT");
+	//tizen.application.getCurrentApplication().hide();
 	
 	var msg = {};
 	msg.id = "SetPort";

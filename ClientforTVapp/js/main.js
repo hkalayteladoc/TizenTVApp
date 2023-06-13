@@ -27,6 +27,9 @@ var hasPortChanged = false;
 var prevSetPort = "";
 var changedPort = "";
 
+var prevPipSelection = "FULL";
+var pipSelection = "FULL";
+
 /*
 let systemInfo = {
 	    //totalMemoryBytes : 0,
@@ -335,23 +338,53 @@ function FillSelector()
 	var portSelectorElem = document.getElementById('portSelection');
 	var currentPortName = "" //currentVideoSource.type + currentVideoSource.number;
 	//console.log(currentPortName);
+
+	var portName = "APP";
+	AddPortOption(portSelectorElem, portName, true);
 	
 	//videoSources = systemInfo.videoSources;
 	for(var i = 0; i < ports.length; i++)
 	{
-		var portName = ports[i]; 
+		portName = ports[i]; 
 		
-		var isSelected = false;
+		var isChecked = false;
 		if(currentPortName === portName)
 		{
-			isSelected = true;
+			isChecked = true;
 		}
 		
+		AddPortOption(portSelectorElem, portName, isChecked)
+	}
+	
+	
+    allTabIndexElems = document.querySelectorAll('[tabindex]');
+    tabIndexCount = allTabIndexElems.length; 
+	//console.log("allTabIndexElems-1: " + allTabIndexElems.length);
+    
+    focusNextTabIndex();	// make sure there is a focus
+
+	/*
+	portSelectorParent = portSelectorElem.parentElement;
+	portSelectorParent.innerHTML = portSelectorParent.innerHTML + "<br>" + 
+			  	"<div class=\"tableColDiv\" id=\"pipSelection\" ></div>";
+
+	var pipSelectorElem = document.getElementById('pipSelection');
+
+	var pipNameApp = "PEEK";
+	AddPipOption(pipSelectorElem, pipNameApp, false)
+	
+	pipNameApp = "FULL";
+	AddPipOption(pipSelectorElem, pipNameApp, true);
+	*/
+}
+
+function AddPortOption(portSelectorElem, portName, isChecked)
+{
 	    let input = document.createElement("input");
 	    input.type = "radio";
 	    input.id = portName;
 	    input.name = "portSelector";
-	    input.checked = isSelected;
+	    input.checked = isChecked;
 	    tabIndexCount++;
 	    input.setAttribute("tabindex", tabIndexCount.toString());
 	    //console.log(input);
@@ -365,16 +398,59 @@ function FillSelector()
 	    
 	    portSelectorElem.appendChild(input);		
 	    portSelectorElem.appendChild(label);		
-	}
-	
-	
-    allTabIndexElems = document.querySelectorAll('[tabindex]');
-    tabIndexCount = allTabIndexElems.length; 
-	//console.log("allTabIndexElems-1: " + allTabIndexElems.length);
-    
-    focusNextTabIndex();	// make sure there is a focus
 	
 }
+
+function AddPipOption(pipSelectorElem, pipNameApp, isChecked)
+{
+	let inputApp = document.createElement("input");
+	inputApp.type = "radio";
+	inputApp.id = pipNameApp;
+	inputApp.name = "pipSelector";
+	inputApp.checked = isChecked;
+	//tabIndexCount++;
+	//inputApp.setAttribute("tabindex", tabIndexCount.toString());
+	//console.log(input);
+
+	let labelApp = document.createElement("label");
+	labelApp.innerText = pipNameApp;
+	labelApp.setAttribute("class", "radioLabel");
+	labelApp.setAttribute("for", pipNameApp);
+	
+	//input.appendChild(label);
+	
+	pipSelectorElem.appendChild(inputApp);
+	pipSelectorElem.appendChild(labelApp);
+	
+}
+
+
+function GetPipSelection()
+{
+	return prevPipSelection;
+	
+	
+	var pipSelectorElem = document.getElementById('pipSelection');
+	if(pipSelectorElem === null)
+	{
+		return pipSelection;
+	}
+	
+	console.log(pipSelectorElem);
+	for (var i = 0; i < pipSelectorElem.children.length; i+=2)
+	{
+		radioElem = pipSelectorElem.children[i];
+		if(radioElem.checked)
+		{
+			pipSelection = radioElem.id;
+			console.log(pipSelection);
+			return pipSelection;
+		}
+	}
+	
+	return pipSelection;
+}
+
 
 function setPortSelection(selectedPort)
 {
