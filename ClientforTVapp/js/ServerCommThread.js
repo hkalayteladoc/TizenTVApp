@@ -274,6 +274,24 @@ async function httpComm()
 		}
 
 
+		{
+			const response = await fetch(serverBaseURL + "/cpuInfo", 
+					{
+						method:"get",
+						headers:{ "Content-Type": "application/json"},
+					});
+			
+			const responseData = await response.json();
+			console.log(responseData);
+			if(JSON.stringify(responseData) != "" )
+			{
+				cpuInfoData = JSON.parse(responseData.cpuInfo);
+			}
+			
+		}
+
+
+
 		return;
 		
 		if(responseData.status === 404)

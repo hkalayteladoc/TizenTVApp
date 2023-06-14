@@ -20,6 +20,7 @@ var serverBaseURL = "";
 
 var portInfo = "";
 var tvInfo = "";
+var periodicInfoData = "";
 
 var setPort = "APP";
 var prevSetPort = "APP";
@@ -67,9 +68,12 @@ function MessageHandler(e)
 
 		serverBaseURL = "http://" + serverAddress + ":" + serverPort;
 		SendData();
-		
 		break;
 
+	case "SendInfo":
+		SendData();
+		break;
+		
 	case "portInfo":
 		portInfo = msg.data;
 		break;
@@ -78,6 +82,10 @@ function MessageHandler(e)
 		tvInfo = msg.data;
 		break;
 
+	case "cpuInfo":
+		periodicInfoData = msg.data;
+		break;
+		
 		
 	case "SetPort":
 		setPort = msg.data;
@@ -102,7 +110,7 @@ function MessageHandler(e)
 			msg.data = "APP";
 			postMessage(JSON.stringify(msg));
 		}
-		
+		break;
 	default:
 		console.log("Error: Invalid message : " + msg);
 		break;
@@ -225,6 +233,22 @@ async function httpComm()
 		}
 		
 		
+		// CPU info data
+		if(periodicInfoData != "")
+		{
+			// cpu was changed
+			var response1 = await fetch(serverBaseURL + "/cpuInfo", 
+					{
+						method:"post",
+						headers:{ "Content-Type": "application/json"},
+						body: JSON.stringify(periodicInfoData),
+					});
+			var jsonData1 = await response1;
+			console.log(jsonData1);
+			
+			prevSetPort = setPort;
+		}
+		
 		
 		
 		if(responseData.status === 404)
@@ -242,6 +266,7 @@ async function httpComm()
 
 async function SendData()
 {
+	console.log("SendData")
 	var response1 = await fetch(serverBaseURL + "/ports", 
 			{
 				method:"post",

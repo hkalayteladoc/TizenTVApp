@@ -18,8 +18,10 @@ var serverPostIntervalID = 0; // the ID returned by setInterval
 
 var ports = [];
 
-var alarmObj = null;
+const memStatusID = "memStatus";
+const cpuStatusID = "cpuStatus";
 
+var periodicInfoData = {};  // CPU and memory Status 
 var systemInfoData = {};	 // json object
 
 var hasPortChanged = false;
@@ -29,6 +31,8 @@ var changedPort = "";
 
 var prevPipSelection = "FULL";
 var pipSelection = "FULL";
+
+var cpuInfoData = {};
 
 /*
 let systemInfo = {
@@ -68,6 +72,7 @@ var init = function ()
         }
     });
  
+	
     // add eventListener for keydown
     document.addEventListener('keydown', function(e)
     {
@@ -278,27 +283,33 @@ function DisplayDeviceInfo()
 {
 	var tableObject = document.getElementById("infoTable");
 
+	var memStr = "";
+	if( (periodicInfoData.availableMemoryGiBytes != undefined) && (periodicInfoData.availableMemoryGiBytes != null))
+	{
+		memStr = periodicInfoData.availableMemoryGiBytes.toFixed(2) + "GB (" + periodicInfoData.availableMemoryBytes + ")";
+	}
+	var cpuStr = "";
+	if( (periodicInfoData.cpuLoad != undefined) && (periodicInfoData.cpuLoad != null))
+	{
+		cpuStr = periodicInfoData.cpuLoad;
+	}
+	
+
 	InsertRowColumn(tableObject, 
-			"Total Memory", systemInfoData.totalMemoryGiBytes.toFixed(2) + "GB (" + systemInfoData.totalMemoryBytes + ")", 
-			"Core Api Ver", systemInfoData.coreAPIver);
-	
-	
-	InsertRowColumn(tableObject, 
-			"Available Memory", systemInfoData.availableMemoryGiBytes.toFixed(2) + "GB (" + systemInfoData.availableMemoryBytes + ")", 
-			"Native Api Ver", systemInfoData.nativeAPIver);
+			"Available Memory", memStr, 
+			"CPU", cpuStr, memStatusID, cpuStatusID);
 	
 	InsertRowColumn(tableObject, 
-			"Profile Name", systemInfoData.profileName, 
-			"Platform Web API Version", systemInfoData.platformWebAPIver);
-	
+			"Total Memory", systemInfoData.totalMemoryGiBytes.toFixed(2) + "GB (" + systemInfoData.totalMemoryBytes + ")",
+			"Profile Name", systemInfoData.profileName );			
+			
+	const versionString = "Core-" + systemInfoData.coreAPIver + ", Native-" + systemInfoData.nativeAPIver + 
+					", Platform Web-" + systemInfoData.platformWebAPIver;
 	
 	InsertRowColumn(tableObject, 
-			"Platform Version Name", systemInfoData.platformVerName , 
-			"Platform Version", systemInfoData.platformver);
+			"Platform Version", systemInfoData.platformVerName + " " + systemInfoData.platformver, 
+			"API Versions", versionString);
 	
-	console.log("systemInfoData  = " + JSON.stringify(systemInfoData));
-	console.log("systemInfoData keys = " + Object.keys(systemInfoData));
-	console.log("systemInfo.TVmodel 2 = " + systemInfoData.tvModel);
 	
 	InsertRowColumn(tableObject, 
 			"TV Model", systemInfoData.tvModel,  
@@ -306,14 +317,44 @@ function DisplayDeviceInfo()
 	
 	InsertRowColumn(tableObject, 
 			"Build Version", systemInfoData.tvBuildVersion,  
-			" ", " ");
+			"Locale", systemInfoData.language /*+ " / " + systemInfoData.country*/);
 
+	var resolutionString = systemInfoData.resolutionWidth + " x " + systemInfoData.resolutionHeight;  
+	resolutionString += " (" + systemInfoData.dotsPerInchWidth + " x " + systemInfoData.dotsPerInchHeight + " DPI)";  
+	resolutionString += " Physical: " + systemInfoData.physicalWidth.toFixed(2) + " x " + systemInfoData.physicalHeight.toFixed(2);  
 	
-	
+	InsertRowColumn(tableObject, 
+			"Resolution", resolutionString,  
+			"Brightness", systemInfoData.brightness.toFixed(2));
+
+	var networkStatus = "Wifi(" + systemInfoData.WiFiStatus + ") Ethernet (" + systemInfoData.EthernetStatus + ")";
+	var ipString = systemInfoData.ssid + " - " + systemInfoData.ipAddress;  
+
+	InsertRowColumn(tableObject, 
+			"Network", networkStatus,  
+			"IP Address", ipString);
+
+	setInterval(PeriodicCPUInfo, 1000);
 }
 
 
-function  InsertRowColumn(tableObject, label1, value1, label2, value2)
+function PeriodicCPUInfo()
+{
+	var cpuStatusCell = document.getElementById(cpuStatusID);
+	if((cpuStatusCell != undefined) && (cpuStatusCell != null))
+	{
+		cpuStatusCell.innerHTML = cpuInfoData.cpuLoad.toFixed(2) + "%"; 
+	}
+
+
+	var memStatusCell = document.getElementById(memStatusID);
+	var statStr = cpuInfoData.availableMemoryGiBytes.toFixed(2) + "GB (" + cpuInfoData.availableMemoryBytes + ")"; 
+	statStr += " - " + cpuInfoData.memoryStatus; 
+	memStatusCell.innerHTML = statStr; 
+	
+}
+
+function  InsertRowColumn(tableObject, label1, value1, label2, value2, cell2Name, cell5Name)
 {
     var rowCount = tableObject.rows.length;  
     var row = tableObject.insertRow(rowCount-2);  
@@ -326,9 +367,18 @@ function  InsertRowColumn(tableObject, label1, value1, label2, value2)
 
     cell1.innerHTML = label1;
     cell2.innerHTML = value1;
+	if(cell2Name != undefined)
+    {
+    	cell2.id = cell2Name;
+    }
+    
     cell3 = "&nbsp;&nbsp;";
     cell4.innerHTML = label2;
     cell5.innerHTML = value2;
+    if(cell5Name != undefined)
+    {
+    	cell5.id = cell5Name;
+    }
 	
 }
 

@@ -12,6 +12,7 @@ var tvPorts = [];
 var changePortData = '';
 var setPort = "TV1";
 var changePipData = "FULL";
+var cpuInfoData = {};
 
 const requestListener = async function (req, res) 
 {
@@ -19,6 +20,7 @@ const requestListener = async function (req, res)
 	
 	if (req.method === 'POST') 
 	{
+		console.log("post");
 		let jsonDataString = '';
 		req.on('data', chunk => 
 			{
@@ -109,6 +111,12 @@ async function StoreData(jsonDataString, reqURL)
 				changePipData = pipChanges.changePip;
 			}
             break
+        case "/cpuInfo":     /// set in browser, in form TV
+			console.log(jsonDataString);
+			cpuChanges = JSON.parse(jsonDataString);
+			console.log(cpuChanges);
+			cpuInfoData = cpuChanges;
+            break
         default:
 			retCode = 404;
             retJson = JSON.stringify({error:"invalid url"});
@@ -157,6 +165,10 @@ async function GetData(reqURL)
 			retData = JSON.stringify({setPortChange:setPort});
 			setPort = "";
             break			
+        case "/cpuInfo":     /// set in browser, in form TV
+			var cpuInfoDataStr = JSON.stringify(cpuInfoData);
+			retData = JSON.stringify({cpuInfo:cpuInfoDataStr});
+            break
         default:
 			retCode = 404;
             retData = JSON.stringify({error:"invalid url"});

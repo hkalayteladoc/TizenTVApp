@@ -43,47 +43,129 @@ function ReadPorts(videoSourcesObject)
 }
 
 
+function CPULoad(cpuLoad)
+{
+	//console.log(cpuLoad);
+	cpuLoadPercent = cpuLoad.load * 100;
+	periodicInfoData.cpuLoad = cpuLoadPercent; 
+	//console.log(cpuLoadPercent.toFixed(2));
+	
+	var cpuStatusCell = document.getElementById(cpuStatusID);
+	if((cpuStatusCell != undefined) && (cpuStatusCell != null))
+	{
+		cpuStatusCell.innerHTML = periodicInfoData.cpuLoad.toFixed(2) + "%"; 
+	}
+}
+
+function ReadMemoryStatus(MemoryStatus)
+{
+	periodicInfoData.memoryStatus = MemoryStatus.status; 
+	//console.log(MemoryStatus.status);
+	//const  = "memStatus";
+	
+	periodicInfoData.availableMemoryBytes = tizen.systeminfo.getAvailableMemory();
+	periodicInfoData.availableMemoryGiBytes = periodicInfoData.availableMemoryBytes / (1024 * 1024 * 1024);
+	var memStatusCell = document.getElementById(memStatusID);
+	if( (memStatusCell != undefined) && (memStatusCell != null))
+	{
+		var statStr = periodicInfoData.availableMemoryGiBytes.toFixed(2) + "GB (" + periodicInfoData.availableMemoryBytes + ")"; 
+		statStr += " - " + periodicInfoData.memoryStatus; 
+		memStatusCell.innerHTML = statStr; 
+	}
+}
+
+
+function ReadResolution(displayResolution)
+{
+	systemInfoData.resolutionWidth = displayResolution.resolutionWidth;
+	systemInfoData.resolutionHeight = displayResolution.resolutionHeight;
+	systemInfoData.dotsPerInchWidth = displayResolution.dotsPerInchWidth;
+	systemInfoData.dotsPerInchHeight = displayResolution.dotsPerInchHeight;
+	
+	systemInfoData.physicalWidth = displayResolution.physicalWidth;
+	systemInfoData.physicalHeight = displayResolution.physicalHeight;
+	systemInfoData.brightness = displayResolution.brightness;
+
+	//console.log(systemInfoData.dotsPerInchWidth);
+	//console.log(systemInfoData.physicalWidth);
+	//console.log(systemInfoData.brightness);
+	
+}
+
+
+function ReadLocaleInfo(localeInfo)
+{
+	systemInfoData.language = localeInfo.language;
+	systemInfoData.country = localeInfo.country;
+}
+
+
+function ReadNetworkType(netInfo)
+{
+	systemInfoData.networkType = netInfo.networkType;
+	console.log(systemInfoData.networkType);
+}
+
+function ReadEtherNetInfo(EtherNetInfo)
+{
+	systemInfoData.Ethernetcable = EtherNetInfo.cable; 
+	systemInfoData.EthernetStatus = EtherNetInfo.status; 
+	systemInfoData.ssid = EtherNetInfo.ssid;
+	systemInfoData.ipAddress = EtherNetInfo.ipAddress;
+	systemInfoData.ipv6Address = EtherNetInfo.ipv6Address;
+	systemInfoData.macAddress = EtherNetInfo.macAddress;
+
+	systemInfoData.ipMode = EtherNetInfo.ipMode;
+	systemInfoData.subnetMask = EtherNetInfo.subnetMask;
+	systemInfoData.gateway = EtherNetInfo.gateway;
+	systemInfoData.dns = EtherNetInfo.dns;
+    
+    
+}
+
+function ReadWiFiInfo(WifiInfo)
+{
+	systemInfoData.WiFiStatus = WifiInfo.status; 
+	systemInfoData.ssid = WifiInfo.ssid; 
+	systemInfoData.ipAddress = WifiInfo.ipAddress; 
+	systemInfoData.ipv6Address = WifiInfo.ipv6Address; 
+	systemInfoData.macAddress = WifiInfo.macAddress; 
+	systemInfoData.WiFisignalStrength = WifiInfo.WiFisignalStrength; 
+	systemInfoData.WifiSecurityMode = WifiInfo.WifiSecurityMode; 
+	systemInfoData.WiFiEncryptionType = WifiInfo.WiFiEncryptionType; 
+	systemInfoData.ipMode = WifiInfo.ipMode; 
+	systemInfoData.subnetMask = WifiInfo.subnetMask; 
+	systemInfoData.gateway = WifiInfo.gateway; 
+	systemInfoData.dns = WifiInfo.dns; 
+}
+
+function ReadStorageInfo(StorageInfo)
+{
+	console.log("StorageUnits: " + StorageInfo.units.length);
+	for(var i = 0; i < StorageInfo.units.length; i++)
+	{
+		console.log(StorageInfo.units[i].type);
+		console.log(StorageInfo.units[i].capacity);
+		console.log(StorageInfo.units[i].availableCapacity);
+		console.log(StorageInfo.units[i].isRemovable);		
+	}
+}
+
+
 function ReadDeviceInfo()
 {
 	console.log("ReadDeviceInfo()");
 	
 	tizen.systeminfo.getPropertyValue("VIDEOSOURCE", ReadPorts);
 	tizen.systeminfo.getPropertyValue("BUILD", successSysInfoProperty, errorSysInfoProperty);
-
-//https://docs.tizen.org/application/web/api/latest/device_api/tv/tizen/tvaudiocontrol.html	
+	tizen.systeminfo.getPropertyValue("DISPLAY", ReadResolution);
+	tizen.systeminfo.getPropertyValue("LOCALE", ReadLocaleInfo);
 	
-	
-//	 CPU
-//	 DISPLAY
-//	 ETHERNET_NETWORK
-//	 LOCALE
-//	 MEMORY
-//	 NETWORK
-//	 PERIPHERAL
-//	 STORAGE
-//	 WIFI_NETWORK 	
-	/*
-	 * 
-	 * 
-https://docs.tizen.org/application/web/api/latest/device_api/tv/tizen/cordova/device.html
-
-	 * 
-	1.2. Device
-The device object describes the device's hardware and software.
-
-  [NoInterfaceObject] interface Device {
-    readonly attribute DOMString cordova;
-    readonly attribute DOMString model;
-    readonly attribute DOMString platform;
-    readonly attribute DOMString uuid;
-    readonly attribute DOMString version;
-  };
-  
-https://docs.tizen.org/application/web/api/latest/device_api/tv/tizen/cordova/networkInformation.html  
-  
-	 * */
-	
-	
+	tizen.systeminfo.getPropertyValue("NETWORK", ReadNetworkType);
+	tizen.systeminfo.getPropertyValue("ETHERNET_NETWORK", ReadEtherNetInfo);
+	tizen.systeminfo.getPropertyValue("WIFI_NETWORK", ReadWiFiInfo);
+	tizen.systeminfo.getPropertyValue("STORAGE", ReadStorageInfo);
+	ReadPeriodic();
 	
 	
 	currentVideoSource = tizen.tvwindow.getSource();
@@ -91,8 +173,10 @@ https://docs.tizen.org/application/web/api/latest/device_api/tv/tizen/cordova/ne
 	systemInfoData.totalMemoryBytes = tizen.systeminfo.getTotalMemory();
 	systemInfoData.totalMemoryGiBytes = systemInfoData.totalMemoryBytes / (1024 * 1024 * 1024);
     
-	systemInfoData.availableMemoryBytes = tizen.systeminfo.getAvailableMemory();
-	systemInfoData.availableMemoryGiBytes = systemInfoData.availableMemoryBytes / (1024 * 1024 * 1024);
+	//systemInfoData.availableMemoryBytes = tizen.systeminfo.getAvailableMemory();
+	//systemInfoData.availableMemoryGiBytes = systemInfoData.availableMemoryBytes / (1024 * 1024 * 1024);
+	periodicInfoData.availableMemoryBytes = tizen.systeminfo.getAvailableMemory();
+	periodicInfoData.availableMemoryGiBytes = periodicInfoData.availableMemoryBytes / (1024 * 1024 * 1024);
 
 	systemInfoData.coreAPIver = tizen.systeminfo.getCapability("http://tizen.org/feature/platform.core.api.version");
 
@@ -111,8 +195,20 @@ https://docs.tizen.org/application/web/api/latest/device_api/tv/tizen/cordova/ne
 	
 	OutputSupportedKeys();
 	
+	setInterval(ReadPeriodic, 1000);
 }
 
+
+function ReadPeriodic()
+{
+	tizen.systeminfo.getPropertyValue("CPU", CPULoad);
+	tizen.systeminfo.getPropertyValue("MEMORY", ReadMemoryStatus);
+	
+	var msg = {};
+	msg.id = "cpuInfo"; 
+	msg.data = periodicInfoData;
+	workerThread.postMessage(JSON.stringify(msg));
+}
 
 
 function OutputSupportedKeys()
@@ -162,12 +258,13 @@ function WorkerMessage(e)
 		break;
 
 	case "changePort":
+		rect = ["0", "0px", "100%", "100%"];
 		console.log(msg.data);
 		if(msg.data === "APP")
 		{
 			try
 			{
-				tizen.tvwindow.show(successCBShow, null, ["0", "0px", "100%", "100%"], "MAIN", "BEHIND");
+				tizen.tvwindow.show(successCBShow, null, rect, "MAIN", "BEHIND");
 			}
 			catch (error)
 			{
@@ -183,7 +280,7 @@ function WorkerMessage(e)
 				break;
 			}
 			tizen.tvwindow.setSource(vidSource, successCBSrc, errorCBSrc);
-			tizen.tvwindow.show(successCBShow, null, ["0", "0px", "100%", "100%"], "MAIN", "FRONT");
+			tizen.tvwindow.show(successCBShow, null, rect, "MAIN", "FRONT");
 			//tizen.tvwindow.hide(successCBHide);
 			//tizen.application.getCurrentApplication().hide();
 		}
@@ -308,11 +405,12 @@ function ChangePort()
 	tizen.tvwindow.show(successCBShow, null, ["0", "0px", "100%", "100%"], "MAIN", "FRONT");
 	//tizen.application.getCurrentApplication().hide();
 	
+	/*
 	var msg = {};
 	msg.id = "SetPort";
 	msg.data = selectedPortElem.id;
 	workerThread.postMessage(JSON.stringify(msg));
-
+	*/
 	
 	return;
 }
@@ -329,13 +427,6 @@ function errorCBSrc(error)
 	var msg = "setSource() is failed, error name: " + error.name + ", error message: " + error.message; 
   console.log(msg);
 }
-
-
-
-
-
-
-
 
 
 
@@ -370,14 +461,14 @@ function disp()
 	console.log(Date());
 }
 
-
+/*
 function successCBShow(windowRect, type)
 {
-  /* Expected result: ["0", "0", "50%", "50%"] */
+  / * Expected result: ["0", "0", "50%", "50%"] * /
   console.log("Rectangle: [" + windowRect[0] + ", " + windowRect[1] + ", " + windowRect[2] + ", " +
               windowRect[3] + "]");
 }
-
+*/
 
 
 
